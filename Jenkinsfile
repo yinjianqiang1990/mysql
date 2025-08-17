@@ -103,6 +103,27 @@ pipeline {
                         --protocol=tcp \
                         -e 'SHOW DATABASES;'
                 """
+                // 增强的健康检查
+                sh """
+                    # 等待MySQL启动
+                    while ! docker exec mysql-server mysqladmin ping -uroot -p123456 --silent; do
+                        sleep 2
+                    done
+            
+                    # 验证用户权限
+                    docker exec mysql-server \
+                      mysql -uroot -p123456 --protocol=tcp -e '
+                        CREATE DATABASE IF NOT EXISTS test_connect;
+                        GRANT ALL ON test_connect.* TO \"yin\"@\"%\";
+                        FLUSH PRIVILEGES;
+                      '
+              
+                    # 最终验证
+                    docker exec mysql-server \
+                      mysql -uyin -p123456 --protocol=tcp -e 'SELECT 1' || exit 1
+                """
+        
+                echo "MySQL容器部署成功！"
             }
         }
     }
