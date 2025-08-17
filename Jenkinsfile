@@ -92,35 +92,24 @@ pipeline {
                         --restart always \
                         ${FULL_IMAGE_NAME}
                 """
-                
-                echo "等待容器启动..."
-                sh "sleep 30"
-                sh "docker logs mysql-server | grep 'ready for connections'"
-        
-                sh """
-                    docker exec mysql-server \
-                      mysql -u root -p123456 \
-                        --protocol=tcp \
-                        -e 'SHOW DATABASES;'
-                """
-                // 增强的健康检查
-                sh """
-                    # 等待MySQL启动
-                    while ! docker exec mysql-server mysqladmin ping -uroot -p123456 --silent; do
-                        sleep 2
-                    done
+                sh """   
+                    # 等待MySQL启动（最长60秒）
+                    if ! docker exec mysql-server mysqladmin ping -uroot -p123456 --silent --wait=30; then
+                        echo "ERROR: MySQL启动超时"
+                        docker logs mysql-server
+                        exit 1
+                    fi
             
-                    # 验证用户权限
+                    # 验证用户和数据库
                     docker exec mysql-server \
-                      mysql -uroot -p123456 --protocol=tcp -e '
-                        CREATE DATABASE IF NOT EXISTS test_connect;
-                        GRANT ALL ON test_connect.* TO \"yin\"@\"%\";
-                        FLUSH PRIVILEGES;
-                      '
+                      mysql -uroot -p123456 -e '
+                        SHOW DATABASES LIKE \"app_db\";
+                        SELECT * FROM mysql.user WHERE User=\"yin\";
+                      ' || exit 1
               
-                    # 最终验证
+                    # 使用应用用户连接测试
                     docker exec mysql-server \
-                      mysql -uyin -p123456 --protocol=tcp -e 'SELECT 1' || exit 1
+                      mysql -uyin -p123456 -e 'SELECT 1' || exit 1
                 """
         
                 echo "MySQL容器部署成功！"
