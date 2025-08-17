@@ -94,13 +94,15 @@ pipeline {
                 """
                 
                 echo "等待容器启动..."
-                sh "sleep 10"
-                
-                echo "检查容器状态..."
-                sh "docker ps | grep mysql-server"
-                
-                echo "验证MySQL服务..."
-                sh "docker exec mysql-server mysql -u root -p123456 -e 'SELECT VERSION();'"
+                sh "sleep 30"
+                sh "docker logs mysql-server | grep 'ready for connections'"
+        
+                sh """
+                    docker exec mysql-server \
+                      mysql -u root -p123456 \
+                        --protocol=tcp \
+                        -e 'SHOW DATABASES;'
+        """
             }
         }
     }
