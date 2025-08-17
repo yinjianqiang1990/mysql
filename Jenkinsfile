@@ -35,7 +35,7 @@ pipeline {
                 echo "检查配置文件格式..."
                 sh "docker run --rm -v ${WORKSPACE}:/app alpine sh -c 'apk add --no-cache bash && bash -n /app/*.sh' || true"
                 echo "检查SQL语法..."
-                sh "docker run --rm -v ${WORKSPACE}:/sql mysql:8.0 mysql -u root -pRoot@123456 -e 'source /sql/init-script.sql' || true"
+                sh "docker run --rm -v ${WORKSPACE}:/sql mysql:8.0 mysql -u root -p123456 -e 'source /sql/init-script.sql' || true"
             }
         }
         
