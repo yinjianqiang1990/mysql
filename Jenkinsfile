@@ -19,8 +19,6 @@ pipeline {
                 sh "docker --version"
                 sh "docker compose version"
                 echo "检查网络连接..."
-                sh "ping -c 3 ${HARBOR_URL}"
-                sh "ping -c 3 github.com"
             }
         }
         
